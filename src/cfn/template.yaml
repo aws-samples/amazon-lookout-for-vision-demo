@@ -1,0 +1,389 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Amazon Lookout for Vision Demo (uksb-1rcfob3k8)
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    MemorySize: 512
+    Timeout: 60
+    Environment:
+      Variables:
+        REGION: !Ref AWS::Region
+        VERSION: "0.1"
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+    Auth:
+      DefaultAuthorizer: CognitoAuthorizer
+      Authorizers:
+        CognitoAuthorizer:
+          UserPoolArn: !GetAtt CognitoUserPool.Arn
+      AddDefaultAuthorizerToCorsPreflight: False
+    GatewayResponses:
+      DEFAULT_4XX:
+        ResponseTemplates:
+          "application/json": '{ "Message": $context.error.messageString }'
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Methods: "'*'"
+            Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            Access-Control-Allow-Origin: "'*'"
+      DEFAULT_5XX:
+        ResponseTemplates:
+          "application/json": '{ "Message": $context.error.messageString }'
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Methods: "'*'"
+            Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            Access-Control-Allow-Origin: "'*'"
+      BAD_REQUEST_BODY:
+        StatusCode: 422
+        ResponseTemplates:
+          "application/json": '{ "Message": $context.error.messageString }'
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Methods: "'*'"
+            Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            Access-Control-Allow-Origin: "'*'"
+      BAD_REQUEST_PARAMETERS:
+        StatusCode: 422
+        ResponseTemplates:
+          "application/json": '{ "Message": $context.error.messageString }'
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Methods: "'*'"
+            Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            Access-Control-Allow-Origin: "'*'"
+
+Parameters:
+  AdminEmail:
+    Description: Creates a username to be used for Authentication. It needs to be an e-mail address.
+    Type: String
+    AllowedPattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
+  ResourcePrefix:
+    Description: AWS Resources are named based on the value of this parameter. You must customise this if you are launching more than one instance of the stack within the same account.
+    Type: String
+    Default: LVDemo
+    AllowedPattern: ^[a-zA-Z0-9_]*$
+  CreateCloudFrontDistribution:
+    Description: Creates a CloudFront distribution for accessing the web interface of the demo. This must be enabled if S3 Block Public Access is enabled at an account level.
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+Conditions:
+  WithCloudFront: !Equals [!Ref CreateCloudFrontDistribution, "true"]
+
+Outputs:
+  url:
+    Value: !If
+      - WithCloudFront
+      - !Sub "https://${CloudFrontDistribution.DomainName}"
+      - !Sub "https://${WebUIBucket.RegionalDomainName}/index.html"
+    Description: Amazon Lookout for Vision Demo Url
+
+Resources:
+  SetupWebUI:
+    Type: Custom::Setup
+    Properties:
+      ServiceToken: !GetAtt LambdaSetup.Arn
+      Region: !Ref AWS::Region
+
+  WebUIBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET]
+            AllowedOrigins: ["*"]
+            Id: !Sub ${ResourcePrefix}LVCorsRule
+            MaxAge: 3600
+
+  WebUIBucketReadPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: WithCloudFront
+    Properties:
+      Bucket: !Ref WebUIBucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Sub arn:aws:s3:::${WebUIBucket}/*
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  CognitoIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub ${ResourcePrefix}IdentityPool
+      CognitoIdentityProviders: 
+        -
+          ClientId: !Ref CognitoUserPoolClient
+          ProviderName: !GetAtt CognitoUserPool.ProviderName
+      AllowUnauthenticatedIdentities: false
+
+  CognitoIdentityPoolRole:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref CognitoIdentityPool
+      Roles:
+        authenticated: !GetAtt LookoutVisionInvokeRole.Arn
+        unauthenticated: !GetAtt LookoutVisionInvokeRole.Arn
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${ResourcePrefix}UsersPool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        InviteMessageTemplate:
+          EmailMessage: !Sub
+            - 'Your Amazon Lookout for Vision Demo username is {username} and the temporary password is {####}<br><br>Click here to access the web interface: <a href="${UIUrl}">${UIUrl}</a>'
+            - {
+                UIUrl:
+                  !If [
+                    WithCloudFront,
+                    !Sub "https://${CloudFrontDistribution.DomainName}",
+                    !Sub "https://${WebUIBucket.RegionalDomainName}/index.html",
+                  ],
+              }
+          EmailSubject: 'Your temporary password for Amazon Lookout for Vision Demo'
+          SMSMessage: 'Your Amazon Lookout for Vision Demo username is {username} and the temporary password is {####}'
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub ${ResourcePrefix}UsersPoolClient
+      GenerateSecret: false
+      RefreshTokenValidity: 1
+      PreventUserExistenceErrors: ENABLED
+      
+  CognitoUserPoolUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      Username: !Ref AdminEmail
+      UserPoolId: !Ref CognitoUserPool
+      DesiredDeliveryMediums:
+        - EMAIL
+      UserAttributes:
+        - Name: email
+          Value: !Ref AdminEmail
+        - Name: email_verified
+          Value: "true"
+
+  LookoutVisionInvokeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated:
+                - cognito-identity.amazonaws.com
+            Action:
+              - sts:AssumeRole
+              - sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud": !Ref CognitoIdentityPool
+  
+  CustomResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LVDemo-setup-S3-fc
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource:
+                  - !GetAtt WebUIBucket.Arn
+                  - !Sub ${WebUIBucket.Arn}/*
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:aws:s3:::solution-builders-${AWS::Region}/*"
+        - PolicyName: LVDemo-cloudwatch-logs
+          PolicyDocument:
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action: logs:CreateLogGroup
+              - Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
+                Effect: Allow
+                Action: logs:CreateLogStream
+
+  LambdaSetup:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}Setup
+      Handler: index.handler
+      CodeUri: ../backend/functions/setup/
+      Description: Custom Lambda resource for the Amazon Lookout for Vision Demo Cloudformation Stack
+      Role: !GetAtt CustomResourceRole.Arn
+      Environment:
+        Variables:
+          API_GATEWAY: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+          COGNITO_IDENTITY_POOL: !Ref CognitoIdentityPool
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+          FROM_BUCKET: !Sub solution-builders-${AWS::Region}
+          CREATE_CLOUDFRONT_DISTRIBUTION: !Ref CreateCloudFrontDistribution
+          TO_BUCKET: !Ref WebUIBucket
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: WithCloudFront
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref WebUIBucket
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: WithCloudFront
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebUIBucket.RegionalDomainName
+            Id: !Sub ${ResourcePrefix}-myS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        Enabled: true
+        HttpVersion: http2
+        Comment: The Distribution for the Lookout for Video Demo
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - HEAD
+            - GET
+            - OPTIONS
+          TargetOriginId: !Sub ${ResourcePrefix}-myS3Origin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  DetectHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.detectHandler
+      CodeUri: ../backend/functions/api/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /detect
+            Method: post
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: lookoutvision:DetectAnomalies
+              Resource: "*"
+
+  ListProjectsHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.listProjectsHandler
+      CodeUri: ../backend/functions/api/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: get
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: lookoutvision:ListProjects
+              Resource: "*"
+            
+  ListModelsHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.listModelsHandler
+      CodeUri: ../backend/functions/api/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /projects/{projectName}/models
+            Method: get
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: lookoutvision:ListModels
+              Resource: "*"
+              
+  StartModelHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.startModelHandler
+      CodeUri: ../backend/functions/api/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /projects/{projectName}/models/{modelVersion}/start
+            Method: post
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: lookoutvision:StartModel
+              Resource: "*"
+              
+  StopModelHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.stopModelHandler
+      CodeUri: ../backend/functions/api/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /projects/{projectName}/models/{modelVersion}/stop
+            Method: post
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: lookoutvision:StopModel
+              Resource: "*"
