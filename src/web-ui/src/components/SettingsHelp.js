@@ -9,7 +9,7 @@ const SettingsHelp = ({ show }) => {
           There is an issue with your settings configuration. If you are running
           the front-end code from your local machine, you may need to follow{" "}
           <a
-            href="https://github.com/aws-samples/amazon-lookout-for-vision-demo/blob/master/CONTRIBUTING.md#working-with-the-web-ui"
+            href="https://github.com/aws-samples/amazon-lookout-for-vision-demo/blob/main/CONTRIBUTING.md#working-with-the-web-ui"
             rel="noopener noreferrer"
             target="_blank"
           >
