@@ -8,7 +8,12 @@ import {
   Row,
   Spinner,
 } from "react-bootstrap";
-import { mapResults } from "../utils";
+import {
+  formatErrorMessage,
+  isErrorRetryable,
+  isImageValidationError,
+  mapResults,
+} from "../utils";
 
 import FileUpload from "./FileUpload";
 import ResultSummary from "./ResultSummary";
@@ -24,6 +29,8 @@ const ImageMode = ({ gateway, model, name }) => {
   const [modelVersion, setModelVersion] = useState(model);
   const [projectName, setProjectName] = useState(name);
   const [projects, setProjects] = useState(undefined);
+  const [retriableError, setRetriable] = useState(true);
+  const [showValidationHint, setShowValidationHint] = useState(false);
 
   const imageContainer = useRef(undefined);
 
@@ -79,11 +86,11 @@ const ImageMode = ({ gateway, model, name }) => {
   };
 
   useEffect(() => {
-    gateway.listProjects().then((x) =>
-      Promise.all(
-        x.Projects.map((project) => gateway.listModels(project.ProjectName))
-      ).then((x) => {
-        const result = mapResults(x, validModelState);
+    const loadData = async () => {
+      try {
+        const projects = await gateway.listProjects();
+        const result = mapResults(projects, validModelState);
+
         if (result.length === 0) {
           setErrorDetails(
             `There are no model with State=${validModelState} in the current account. This is mandatory in order to use this demo`
@@ -91,8 +98,12 @@ const ImageMode = ({ gateway, model, name }) => {
           setFormState("error");
         }
         setProjects(result);
-      })
-    );
+      } catch (e) {
+        setErrorDetails(formatErrorMessage(e));
+      }
+    };
+
+    loadData();
   }, [gateway]);
 
   useEffect(() => {
@@ -105,7 +116,9 @@ const ImageMode = ({ gateway, model, name }) => {
         })
         .catch((e) => {
           setFormState("error");
-          setErrorDetails(e);
+          setErrorDetails(formatErrorMessage(e));
+          setRetriable(isErrorRetryable(e));
+          setShowValidationHint(isImageValidationError(e));
         });
     }
   }, [formState, gateway, image, projectName, modelVersion]);
@@ -120,8 +133,15 @@ const ImageMode = ({ gateway, model, name }) => {
               display: formState === "error" ? "block" : "none",
             }}
           >
-            An error happened{errorDetails && `: ${errorDetails}`}.{" "}
-            <a href={window.location.href}>Retry</a>.
+            {errorDetails}{" "}
+            {retriableError && <a href={window.location.href}>Retry</a>}
+            {showValidationHint && (
+              <>
+                <br />
+                Hint: verify the image size used for testing is the same as the
+                images used during the training
+              </>
+            )}
           </Alert>
           <Row>
             <Col

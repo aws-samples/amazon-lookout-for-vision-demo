@@ -31,7 +31,7 @@ exports.detectHandler = async (event) => {
     return respond(200, anomalies);
   } catch (e) {
     console.log(e);
-    return respond(500, { error: e });
+    return respond(e.statusCode || 500, { error: e });
   }
 };
 
@@ -42,7 +42,7 @@ exports.listModelsHandler = async (event) => {
     return respond(200, models);
   } catch (e) {
     console.log(e);
-    return respond(500, { error: e });
+    return respond(e.statusCode || 500, { error: e });
   }
 };
 
@@ -52,7 +52,7 @@ exports.listProjectsHandler = async () => {
     return respond(200, projects);
   } catch (e) {
     console.log(e);
-    return respond(500, { error: e });
+    return respond(e.statusCode || 500, { error: e });
   }
 };
 
@@ -71,7 +71,7 @@ exports.startModelHandler = async (event) => {
     return respond(200, response);
   } catch (e) {
     console.log(e);
-    return respond(500, { error: e });
+    return respond(e.statusCode || 500, { error: e });
   }
 };
 
@@ -87,6 +87,6 @@ exports.stopModelHandler = async (event) => {
     return respond(200, response);
   } catch (e) {
     console.log(e);
-    return respond(500, { error: e });
+    return respond(e.statusCode || 500, { error: e });
   }
 };

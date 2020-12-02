@@ -1,23 +1,21 @@
 export const mapResults = (data, type) => {
-  const parseArn = (arn) => {
-    const s = arn.split(":")[5].split("/");
-    return [s[1], s[2]];
-  };
-
   const result = {};
 
-  data.forEach((project) =>
+  data.forEach((project) => {
+    const projectName = project.ProjectName;
+    if (!type) result[projectName] = result[projectName] || [];
+
     project.Models.forEach((model) => {
-      const [projectName, versionName] = parseArn(model.ModelArn);
+      const modelVersion = model.ModelVersion;
       if (!type || model.Status === type) {
         result[projectName] = result[projectName] || [];
         result[projectName].unshift({
-          version: versionName,
+          version: modelVersion,
           details: model,
         });
       }
-    })
-  );
+    });
+  });
 
   return result;
 };
@@ -42,9 +40,33 @@ export const formatErrorMessage = (e) => {
   let msg = "An error happened";
   if (e.response) {
     if (e.response.status) msg += ` (${e.response.status} status code)`;
-    if (e.response.data && e.response.data.Message)
-      msg += `: ${e.response.data.Message}`;
+    if (
+      e.response.data &&
+      e.response.data.error &&
+      e.response.data.error.message
+    )
+      msg += `: ${e.response.data.error.message}`;
   }
 
   return msg;
+};
+
+export const isErrorRetryable = (e) => {
+  return (
+    e.response &&
+    e.response.data &&
+    e.response.data.error &&
+    e.response.data.error.retryable
+  );
+};
+
+export const isImageValidationError = (e) => {
+  if (
+    !e.response ||
+    !e.response.data ||
+    !e.response.data.error ||
+    !e.response.data.error.code
+  )
+    return false;
+  return e.response.data.error.code;
 };

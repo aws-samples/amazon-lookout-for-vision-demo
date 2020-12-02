@@ -15,21 +15,18 @@ const ProjectsSummary = ({ gateway, onHelp, onModelClick, refreshCycle }) => {
     setProjectsRefreshCycle(projectsRefreshCycle + 1);
 
   useEffect(() => {
-    setLoading(true);
-    gateway
-      .listProjects()
-      .then((x) =>
-        Promise.all(
-          x.Projects.map((project) => gateway.listModels(project.ProjectName))
-        ).then((x) => {
-          setProjects(mapResults(x));
-          setLoading(false);
-        })
-      )
-      .catch((e) => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const projects = await gateway.listProjects();
+        setProjects(mapResults(projects));
+      } catch (e) {
         setErrorDetails(formatErrorMessage(e));
-        setLoading(false);
-      });
+      }
+      setLoading(false);
+    };
+
+    loadData();
   }, [gateway, projectsRefreshCycle, refreshCycle]);
 
   return (
@@ -72,6 +69,11 @@ const ProjectsSummary = ({ gateway, onHelp, onModelClick, refreshCycle }) => {
             <Card key={index}>
               <Card.Header>{projectName}</Card.Header>
               <Card.Body>
+                {projects[projectName].length === 0 && (
+                  <span>
+                    There are no models available for {projectName} project
+                  </span>
+                )}
                 <Table>
                   <tbody>
                     {projects[projectName].map((model, index) => (
