@@ -12,7 +12,7 @@
     "dev": "cd src/web-ui && npm run dev",
     "echo-version": "echo v`node -e \"console.log(require('node-yaml').readSync('templates/template.yaml').Globals.Function.Environment.Variables.VERSION)\"`",
     "pre-deploy-test": "taskcat -c ci/taskcat.yml --verbose --exclude docs --exclude src --exclude taskcat_outputs",
-    "postinstall": "cd src/web-ui && npm i && cd ../functions/setup && npm i",
+    "postinstall": "cd src/web-ui && npm i && cd ../functions/setup && npm i && cd ../api && npm i",
     "start": "cd src/web-ui && npm start",
     "tag": "git tag `npm run echo-version --silent`",
     "test": "cfn-lint templates/template.yaml",
