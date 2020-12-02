@@ -1,8 +1,8 @@
 import request from "./request";
 
 const gateway = {
-  detectAnomalies(projectName, modelVersion, image) {
-    return request("/detect", { projectName, modelVersion, image }, "post");
+  detectAnomalies(projectName, modelVersion, contentType, image) {
+    return request("/detect", { projectName, modelVersion, contentType, image }, "post");
   },
 
   async listProjects() {

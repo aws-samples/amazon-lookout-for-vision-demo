@@ -15,7 +15,7 @@ const respond = (statusCode, response) => ({
 
 exports.detectHandler = async (event) => {
   const body = JSON.parse(event.body);
-  const { image, projectName, modelVersion } = body;
+  const { contentType, image, projectName, modelVersion } = body;
   const imageBytes = Buffer.from(image, "base64");
 
   try {
@@ -24,7 +24,7 @@ exports.detectHandler = async (event) => {
         ProjectName: projectName,
         ModelVersion: modelVersion,
         Body: imageBytes,
-        ContentType: "image",
+        ContentType: contentType,
       })
       .promise();
 

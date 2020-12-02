@@ -26,6 +26,7 @@ const ImageMode = ({ gateway, model, name }) => {
   const [errorDetails, setErrorDetails] = useState("");
   const [formState, setFormState] = useState("initial");
   const [image, setImage] = useState(undefined);
+  const [contentType, setContentType] = useState(undefined);
   const [modelVersion, setModelVersion] = useState(model);
   const [projectName, setProjectName] = useState(name);
   const [projects, setProjects] = useState(undefined);
@@ -59,12 +60,15 @@ const ImageMode = ({ gateway, model, name }) => {
     reader.onload = () => {
       const [type, content] = reader.result.split(",");
       const validationResult = validateImage(type, file.size);
+      const mimeType = type.split(":")[1].split(";")[0];
 
       if (validationResult.isValid) {
         setImage(content);
+        setContentType(mimeType);
         setFormState("ready");
       } else {
         setImage(undefined);
+        setContentType(undefined);
         setFormState("error");
         setErrorDetails(validationResult.error);
       }
@@ -109,7 +113,7 @@ const ImageMode = ({ gateway, model, name }) => {
   useEffect(() => {
     if (formState === "ready") {
       gateway
-        .detectAnomalies(projectName, modelVersion, image)
+        .detectAnomalies(projectName, modelVersion, contentType, image)
         .then((response) => {
           setApiResponse(response);
           setFormState("processed");
@@ -121,7 +125,7 @@ const ImageMode = ({ gateway, model, name }) => {
           setShowValidationHint(isImageValidationError(e));
         });
     }
-  }, [formState, gateway, image, projectName, modelVersion]);
+  }, [contentType, formState, gateway, image, projectName, modelVersion]);
 
   return (
     <Row className="tab-content">
