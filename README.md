@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Amazon Lookout for Vision Demo</h1>
 
-Amazon Lookout for Vision is a machine learning service that uses computer vision to automate visual inspection of product defects.
+[Amazon Lookout for Vision](https://aws.amazon.com/lookout-for-vision/) is a machine learning service that uses computer vision to automate visual inspection of product defects.
 
 ### Index
 
