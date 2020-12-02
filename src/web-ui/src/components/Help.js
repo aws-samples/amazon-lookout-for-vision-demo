@@ -3,12 +3,21 @@ import React from "react";
 const Help = () => (
   <div className="intro tab-content">
     <h2>Amazon Lookout for Vision</h2>
-    Amazon Lookout for Vision gives you a fast and easy way to implement
-    computer vision-based inspection to detect defects on industrial products,
-    at scale. Provide as few as 30 baseline images and Amazon Lookout for Vision
-    will automatically build a model for you within few hours. You can then
-    integrate the model with your manufacturing lines to quickly and accurately
-    identify anomalies like dents, cracks and scratches.
+    Amazon Lookout for Vision is a machine learning (ML) service that spots
+    defects and anomalies in visual representations using computer vision (CV).
+    With Amazon Lookout for Vision, manufacturing companies can increase quality
+    and reduce operational costs by quickly identifying differences in images of
+    objects at scale. For example, Amazon Lookout for Vision can be used to
+    identify missing components in products, damage to vehicles or structures,
+    irregularities in production lines, miniscule defects in silicon wafers, and
+    other similar problems. Amazon Lookout for Vision uses ML to see and
+    understand images from any camera as a person would, but with an even higher
+    degree of accuracy and at a much larger scale. Amazon Lookout for Vision
+    allows customers to eliminate the need for costly and inconsistent manual
+    inspection, while improving quality control, defect and damage assessment,
+    and compliance. In minutes, you can begin using Amazon Lookout for Vision to
+    automate inspection of images and objects–with no machine learning expertise
+    required.
     <br />
     <br />
     Consult the{" "}
