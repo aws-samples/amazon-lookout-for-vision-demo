@@ -4,7 +4,7 @@ import { ListGroup } from "react-bootstrap";
 import Icon from "./Icon";
 import SectionAccordion from "./SectionAccordion";
 
-const percentageToString = (percentage) => Math.round(percentage * 10) / 10;
+const percentageToString = (percentage) => Math.round(percentage * 1000) / 10;
 
 const ResultSummary = ({ apiResponse, image, modelVersion, projectName }) => {
   const isAnomalous =
