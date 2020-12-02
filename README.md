@@ -32,7 +32,7 @@ The UI also allows to stop a model in the *HOSTED* state by calling the `StopMod
 
 If you have any model in the *HOSTED* state, you can click the title and then select an image from your local machine to detect anomalies. The frontend app will call the `DetectAnomalies` API in Amazon Lookout for Vision.
 
-To learn more about Amazon Lookout for Vision [consult the documentation](https://docs.aws.amazon.com/lookoutvision).
+To learn more about Amazon Lookout for Vision [consult the documentation](https://docs.aws.amazon.com/lookout-for-vision).
 
 
 ### Usage
@@ -49,7 +49,7 @@ The demo application is deployed as an [AWS CloudFormation](https://aws.amazon.c
 
 > **Note**  
 You are responsible for the cost of the AWS services used while running this sample deployment. There is no additional cost for using this sample. For full details, see the following pricing pages for each AWS service you will be using in this sample.  Prices are subject to change.
-> * [Amazon Lookout for Vision Pricing](https://aws.amazon.com/lookoutvision/pricing/)
+> * [Amazon Lookout for Vision Pricing](https://aws.amazon.com/lookout-for-vision/pricing/)
 > * [Amazon API Gateway Pricing](https://aws.amazon.com/api-gateway/pricing/)
 > * [Amazon CloudFront Pricing](https://aws.amazon.com/cloudfront/pricing/)
 > * [Amazon Cognito Pricing](https://aws.amazon.com/cognito/pricing/)
