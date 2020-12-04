@@ -43,7 +43,7 @@ const ImageMode = ({ gateway, model, name }) => {
       "data:image/png;base64",
     ].includes(type);
 
-    const validSize = size < 4000000;
+    const validSize = size < 8000000;
     const result = { isValid: validType && validSize };
     const errors = [];
     if (!validType) errors.push("the image format is not valid");
