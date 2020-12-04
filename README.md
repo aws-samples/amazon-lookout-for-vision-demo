@@ -22,7 +22,7 @@
 This demo uses [Amazon Lookout for Vision](https://aws.amazon.com/lookout-for-vision) for image processing, [Amazon Cognito](https://aws.amazon.com/cognito) for authenticating the Service Requests, [Amazon API Gateway](https://aws.amazon.com/api-gateway) and [AWS Lambda](https://aws.amazon.com/lambda) for the API, and [Amazon CloudFront](https://aws.amazon.com/cloudfront), [Amazon S3](https://aws.amazon.com/s3), [AWS Amplify](https://aws.amazon.com/amplify), and [React](https://reactjs.org) for the front-end layer.
 
 <p align="center">
-  <img src="docs/lv.png" alt="Architecture Diagram" />
+  <img src="docs/lv.svg" alt="Architecture Diagram" />
 </p>
 
 When accessing the Demo, the frontend app calls the `ListProjects` API in Amazon Lookout for Vision. Then, for each project, it calls the `ListModels` API. This is for fetching the list and status of each model in the current account.
