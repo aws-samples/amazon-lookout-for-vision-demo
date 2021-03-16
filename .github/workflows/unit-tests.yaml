@@ -42,12 +42,10 @@ jobs:
         uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.6'
-      - name: Install node dependencies
+      - name: Install dependencies
         run: npm i
       - name: Install ruby dependencies
         run: gem install cfn-nag
-      - name: Install python dependencies
-        run: pip3 install -r requirements.txt
       # Build
       - name: Run build
         run: npm run build
