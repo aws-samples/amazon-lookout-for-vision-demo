@@ -4,13 +4,13 @@ Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
-    Runtime: nodejs12.x
+    Runtime: nodejs16.x
     MemorySize: 512
     Timeout: 60
     Environment:
       Variables:
         REGION: !Ref AWS::Region
-        VERSION: "1.0"
+        VERSION: "1.1"
   Api:
     EndpointConfiguration: REGIONAL
     Cors:
