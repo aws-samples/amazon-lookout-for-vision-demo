@@ -26,6 +26,7 @@ const ImageMode = ({ gateway, model, name }) => {
   const [errorDetails, setErrorDetails] = useState("");
   const [formState, setFormState] = useState("initial");
   const [image, setImage] = useState(undefined);
+  const [imageMask, setImageMask] = useState(undefined);
   const [contentType, setContentType] = useState(undefined);
   const [modelVersion, setModelVersion] = useState(model);
   const [projectName, setProjectName] = useState(name);
@@ -35,7 +36,11 @@ const ImageMode = ({ gateway, model, name }) => {
 
   const imageContainer = useRef(undefined);
 
-  const resetSummary = () => setApiResponse(undefined) && setErrorDetails("");
+  const resetSummary = () => {
+    setApiResponse(undefined);
+    setErrorDetails("");
+    setImageMask(undefined); 
+  };
 
   const validateImage = (type, size) => {
     const validType = [
@@ -114,8 +119,19 @@ const ImageMode = ({ gateway, model, name }) => {
     if (formState === "ready") {
       gateway
         .detectAnomalies(projectName, modelVersion, contentType, image)
-        .then((response) => {
+        .then(async (response) => {
           setApiResponse(response);
+          if (response.DetectAnomalyResult.AnomalyMask.data) {
+            var binary = '';
+            var bytes = new Uint8Array(response.DetectAnomalyResult.AnomalyMask.data);
+            var len = bytes.byteLength;
+            for (var i = 0; i < len; i++) {
+              binary += String.fromCharCode( bytes[ i ] );
+            }
+            var base64Data = window.btoa(binary);
+
+            loadAnomalyMask(`data:image/png;base64, ${base64Data}`);
+          }
           setFormState("processed");
         })
         .catch((e) => {
@@ -125,7 +141,63 @@ const ImageMode = ({ gateway, model, name }) => {
           setShowValidationHint(isImageValidationError(e));
         });
     }
-  }, [contentType, formState, gateway, image, projectName, modelVersion]);
+  }, [contentType, formState, gateway, image, imageMask, projectName, modelVersion]);
+
+  const loadAnomalyMask = async (data) => {
+    
+    // create fake image to handle onload event
+    var img = document.createElement("img");
+    img.src = data;
+    img.style.visibility = "hidden";
+    document.body.appendChild(img);
+
+    img.onload = function() {
+      var canvas = document.createElement("canvas");
+      canvas.width = img.offsetWidth;
+      canvas.height = img.offsetHeight;
+
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img,0,0);
+
+      // remove fake image
+      img.parentNode.removeChild(img);
+
+      // replace the white background with transparent
+      if (canvas.width > 0 && canvas.height > 0) {
+        var imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+        var data = imageData.data;
+
+        var r,g,b;
+        for(var x = 0, len = data.length; x < len; x+=4) {
+            r = data[x];
+            g = data[x+1];
+            b = data[x+2];
+
+            if((r == 255) &&
+              (g == 255) &&
+              (b == 255)) {
+
+                data[x] = 0;
+                data[x+1] = 0;
+                data[x+2] = 0;
+                data[x+3] = 0;
+
+            } 
+        }
+
+        ctx.putImageData(imageData,0,0);
+        setImageMask(canvas.toDataURL());
+      }
+    }    
+  }
+
+  const overlayMask = (img) => {    
+    var imageElement = document.getElementById(img.id);
+    if (imageElement) {
+      var topMargin = (img.height + 40) * -1; // add 40 to compensate for the padding
+      imageElement.style.marginTop = topMargin + "px";
+    }
+  }
 
   return (
     <Row className="tab-content">
@@ -164,6 +236,18 @@ const ImageMode = ({ gateway, model, name }) => {
                   ref={(x) => (imageContainer.current = x)}
                   src={`data:image/png;base64, ${image}`}
                   style={{ width: "100%", margin: "10px" }}
+                />
+              )}
+              {imageMask && (
+                <img
+                  id="imageMask"
+                  alt="image mask"
+                  ref={(x) => (imageContainer.current = x)}
+                  src={imageMask}
+                  onLoad={(e) => {
+                    overlayMask(e.target);
+                  }}
+                  style={{ width: "100%", margin: "10px"}}
                 />
               )}
             </Col>
