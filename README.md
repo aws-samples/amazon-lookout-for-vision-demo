@@ -1,7 +1,10 @@
 <p align="center">
   <img src="docs/lvlogo.png" alt="Amazon Lookout for Vision Demo Logo" />
 </p>
-<h1 align="center">Amazon Lookout for Vision Demo</h1>
+<h1 align="center">Amazon Lookout for Vision Demo (Archived)</h1>
+
+> **End of support notice**: On October 31, 2025, AWS will discontinue support for Amazon Lookout for Vision. After October 31, 2025, you will no longer be able to access the Lookout for Vision console or Lookout for Vision resources. For more information, see [Exploring Alternatives to Lookout for Vision](https://aws.amazon.com/blogs/machine-learning/exploring-alternatives-and-seamlessly-migrating-data-from-amazon-lookout-for-vision/).
+
 
 [Amazon Lookout for Vision](https://aws.amazon.com/lookout-for-vision/) is a machine learning (ML) service that spots defects and anomalies in visual representations using computer vision (CV). With Amazon Lookout for Vision, manufacturing companies can increase quality and reduce operational costs by quickly identifying differences in images of objects at scale. For example, Amazon Lookout for Vision can be used to identify missing components in products, damage to vehicles or structures, irregularities in production lines, miniscule defects in silicon wafers, and other similar problems. Amazon Lookout for Vision uses ML to see and understand images from any camera as a person would, but with an even higher degree of accuracy and at a much larger scale. Amazon Lookout for Vision allows customers to eliminate the need for costly and inconsistent manual inspection, while improving quality control, defect and damage assessment, and compliance. In minutes, you can begin using Amazon Lookout for Vision to automate inspection of images and objects–with no machine learning expertise required.
 
